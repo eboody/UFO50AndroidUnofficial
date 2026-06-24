@@ -1,3 +1,6 @@
 .DS_Store
 
 bin/java
+bin/utmt
+com.unofficial.ufo50.apk
+smoke/
