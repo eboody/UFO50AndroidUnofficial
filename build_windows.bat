@@ -75,8 +75,8 @@ move /y .\assets\game.droid.patched .\assets\game.droid
 REM Clean wrapper apk
 REM The base wrapper contains placeholder game.droid/options.ini; replace them.
 echo Preparing wrapper...
-.\bin\aapt remove -f -v UFO50Wrapper.apk assets/options.ini
-.\bin\aapt remove -f -v UFO50Wrapper.apk assets/game.droid
+.\bin\aapt.exe remove -f -v UFO50Wrapper.apk assets/options.ini
+.\bin\aapt.exe remove -f -v UFO50Wrapper.apk assets/game.droid
 
 : JAVA
 REM Download Java, if needed
@@ -106,7 +106,7 @@ for /r assets %%F in (*) do (
 	set "asset=%%F"
 	set "asset=!asset:%CD%\=!"
 	set "asset=!asset:\=/!"
-	.\bin\aapt add -f -v UFO50Wrapper.apk "!asset!"
+	.\bin\aapt.exe add -f -v UFO50Wrapper.apk "!asset!"
 	if errorlevel 1 exit /b !errorlevel!
 )
 
