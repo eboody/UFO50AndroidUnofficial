@@ -7,6 +7,7 @@ if not "%UFO50_SOURCE:~-1%"=="\" set "UFO50_SOURCE=%UFO50_SOURCE%\"
 
 set "WRAPPER_APK=%UFO50_WRAPPER_APK%"
 if "%WRAPPER_APK%"=="" set "WRAPPER_APK=%~dp0base\AndroidWrapper2024.1400.4.968_VM_debug_gamepad_hotplug.apk"
+set "APK_ALIGNMENT=16384"
 
 REM Make sure that we actually have game files first
 if not exist "%UFO50_SOURCE%data.win" (
@@ -115,9 +116,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "Add-Type -AssemblyName S
 if errorlevel 1 exit /b !errorlevel!
 
 : BUILD
-REM Zipalign and sign APK
+REM Zipalign and sign APK. Use 16 KiB alignment so uncompressed native
+REM libraries install on Android devices built with 16 KiB page sizes.
 echo Building APK...
-.\bin\zipalign.exe -p -f -v 4 UFO50Wrapper.apk com.unofficial.ufo50.zipalign.apk
+.\bin\zipalign.exe -f -v %APK_ALIGNMENT% UFO50Wrapper.apk com.unofficial.ufo50.zipalign.apk
 .\bin\java\bin\java.exe -jar .\bin\apksigner.jar sign --key .\base\testkey.pk8 --cert .\base\testkey.x509.pem --out com.unofficial.ufo50.apk com.unofficial.ufo50.zipalign.apk
 
 : CLEAN

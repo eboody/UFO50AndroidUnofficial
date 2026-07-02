@@ -15,6 +15,7 @@ UFO50_SOURCE="${1:-${UFO50_SOURCE:-./ufo50}}"
 WRAPPER_APK="${UFO50_WRAPPER_APK:-./base/AndroidWrapper2024.1400.4.968_VM_debug_gamepad_hotplug.apk}"
 AAPT="./bin/aapt-osx"
 ZIPALIGN="./bin/zipalign-osx"
+APK_ALIGNMENT=16384
 JAVA="./bin/java/Contents/Home/bin/java"
 OUTPUT_APK="com.unofficial.ufo50.apk"
 
@@ -190,9 +191,10 @@ with zipfile.ZipFile(apk, 'r') as zin, zipfile.ZipFile(tmp, 'w') as zout:
 os.replace(tmp, apk)
 PY
 
-# Zipalign and sign APK
+# Zipalign and sign APK. Use 16 KiB alignment so uncompressed native
+# libraries install on Android devices built with 16 KiB page sizes.
 echo "Building APK..."
-"${ZIPALIGN}" -p -f -v 4 UFO50Wrapper.apk com.unofficial.ufo50.zipalign.apk
+"${ZIPALIGN}" -f -v "${APK_ALIGNMENT}" UFO50Wrapper.apk com.unofficial.ufo50.zipalign.apk
 "${JAVA}" -jar ./bin/apksigner.jar sign --key ./base/testkey.pk8 --cert ./base/testkey.x509.pem --out "${OUTPUT_APK}" com.unofficial.ufo50.zipalign.apk
 
 # Clean up

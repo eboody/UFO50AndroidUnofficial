@@ -54,7 +54,7 @@ If you copy files manually, merge/replace the whole UFO 50 install into `ufo50/`
 
 ## Troubleshooting
 - **Crash immediately after the cover art/splash screen:** rebuild from a fresh checkout or pull the latest version of this repo. The current wrapper is built for Android 5.0+ compatibility, including handhelds such as MagicX Mini Zero 28/Android 10 and MagicX One35/Android 12.
-- **"Error parsing the package":** delete the old APK from the device, rebuild, copy the new `com.unofficial.ufo50.apk`, and install that file again. If Android still rejects it, confirm the downloaded/copied APK size matches the one on your computer and that the device is running Android 5.0 or newer.
+- **"App not installed" / "Error parsing the package":** delete the old APK from the device, rebuild, copy the new `com.unofficial.ufo50.apk`, and install that file again. If Android still rejects it, confirm the downloaded/copied APK size matches the one on your computer and that the device is running Android 5.0 or newer. Current builds align native libraries for newer 16 KiB-page Android devices; rebuild if you made the APK with an older checkout.
 - **Missing text/audio/textures or startup crashes after replacing files:** make sure you did not skip duplicate files when copying the game directory. Re-copy the game files and choose replace/merge, or pass the game install path directly to the build script.
 
 ## Save Management
