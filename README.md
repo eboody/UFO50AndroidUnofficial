@@ -7,7 +7,7 @@ Please do not share your APK with others. Mossmouth created an incredible game a
 pirating it would be a serious dick move. Don't screw over indie developers.
 
 UFO 50 version 1.9.5 is supported by dynamically packaging the game data files that ship with your local copy. Newer releases should also work when they keep the same GameMaker data layout.
-The default Android wrapper uses GameMaker runtime 2024.1400.4.968 for compatibility with the current Steam build, includes a controller hotplug patch so Bluetooth controllers can be detected after the app is already open, and is built to run on Android 5.0+ devices, including Android 10/12 handhelds.
+The default Android wrapper uses GameMaker runtime 2024.1400.4.968 for compatibility with the current Steam build, includes a controller hotplug patch so Bluetooth controllers can be detected after the app is already open, and is built to run on Android 5.0+ devices, including Android 10/12 handhelds. The current APK packaging has been install/launch tested on Android 10, Android 11, and current Android emulator images.
 
 ## Building
 0. Purchase and install UFO 50. The devs deserve the money.
