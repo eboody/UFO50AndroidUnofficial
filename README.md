@@ -65,7 +65,7 @@ For the portrait-hosted version, run:
 
 ### Portrait presentation
 
-Portrait mode produces `com.unofficial.ufo50.portrait.apk`. Android keeps the app upright in a portrait window while UFO 50 retains its original landscape 16:9 game canvas, centered without stretching or cropping and surrounded by black space. The normal landscape build remains the default and continues to produce `com.unofficial.ufo50.apk`.
+Portrait mode produces `com.unofficial.ufo50.portrait.apk`. Android keeps the app upright in a portrait window while UFO 50 retains its original landscape 16:9 game canvas without stretching or cropping. The canvas is shifted 200 pixels above vertical center, leaving black space around it. The normal landscape build remains the default and continues to produce `com.unofficial.ufo50.apk`.
 
 After the script finishes:
 1. Copy `com.unofficial.ufo50.apk`, or `com.unofficial.ufo50.portrait.apk` for the portrait-hosted build, to your Android device.
