@@ -25,6 +25,12 @@ build_windows.bat "C:\Program Files (x86)\Steam\steamapps\common\UFO 50"
 If you omit the path, copy/merge your UFO 50 files into this repo's `ufo50` folder first, then run `build_windows.bat`.
 The Windows builder supports current Windows 10 and Windows 11 installations. It uses the bundled Windows `curl` and `tar` commands to download its Java and UndertaleModCli dependencies; PowerShell execution policy does not need to be changed.
 
+To build the portrait-hosted version on Windows, add `portrait` as the second argument:
+
+```bat
+build_windows.bat "C:\Program Files (x86)\Steam\steamapps\common\UFO 50" portrait
+```
+
 ### Linux
 Open a terminal in this repo and run:
 
@@ -34,6 +40,12 @@ chmod +x build_linux
 ```
 
 If your Steam library is somewhere else, replace the path with your UFO 50 install folder. The Linux script requires `wget`, `unzip`, and `python3`; install them with your distro's package manager if the script reports they are missing.
+
+For the portrait-hosted version, run:
+
+```sh
+./build_linux "$HOME/.steam/steam/steamapps/common/UFO 50" portrait
+```
 
 ### macOS
 Open Terminal in this repo and run:
@@ -45,11 +57,21 @@ chmod +x build_macos.sh
 
 If your Steam library is somewhere else, replace the path with your UFO 50 install folder. The macOS script requires `wget`, `unzip`, and `python3`; if `wget` is missing, install it with Homebrew: `brew install wget`.
 
+For the portrait-hosted version, run:
+
+```sh
+./build_macos.sh "$HOME/Library/Application Support/Steam/steamapps/common/UFO 50" portrait
+```
+
+### Portrait presentation
+
+Portrait mode produces `com.unofficial.ufo50.portrait.apk`. Android keeps the app upright in a portrait window while UFO 50 retains its original landscape 16:9 game canvas, centered without stretching or cropping and surrounded by black space. The normal landscape build remains the default and continues to produce `com.unofficial.ufo50.apk`.
+
 After the script finishes:
-1. Copy `com.unofficial.ufo50.apk` to your Android device.
+1. Copy `com.unofficial.ufo50.apk`, or `com.unofficial.ufo50.portrait.apk` for the portrait-hosted build, to your Android device.
 2. Enable installing from unofficial sources on your device, if needed. This varies from device to device.
-3. Install `com.unofficial.ufo50.apk` with your file manager of choice. You can delete the APK file after it's installed.
-4. Play! You can press Start, go to Settings > Video Settings, and set SCALE to FILL to fill the entire screen.
+3. Install the copied APK with your file manager of choice. You can delete the APK file after it's installed. Portrait and landscape builds use the same package ID and signing identity, so installing one replaces the other rather than creating two app icons.
+4. Play! On the normal landscape build, you can press Start, go to Settings > Video Settings, and set SCALE to FILL. Leave the portrait-hosted build at its aspect-preserving scale if you do not want stretching.
 
 If you copy files manually, merge/replace the whole UFO 50 install into `ufo50/` instead of skipping duplicates. The build needs the current `data.win`, `options.ini`, `*.dat`, `Textures/`, `ext/`, and `fonts/` files from your installed game.
 
@@ -68,6 +90,8 @@ To upload/restore your save, place your save files into the save folder and run 
 ## Notes
 If you have UFO 50 working on PortMaster, open ufo50.port in an archive manager like 7-zip and use the game.droid and options.ini files in that directory.
 If you don't have any idea what the above means, don't worry about it. It's entirely optional.
+
+Builds use the repository's public test signing key so landscape and portrait variants can replace one another and the save-management scripts can use Android's debugging facilities. That key is not an authenticity guarantee: only install APKs you built yourself from a checkout you trust, and do not accept APK updates from other people.
 
 ## To-Do
 - Integrate PortMaster's changes into build script as an optional selection

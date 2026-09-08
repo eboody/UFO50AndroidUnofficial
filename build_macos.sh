@@ -1,6 +1,39 @@
 #!/bin/bash
 set -euo pipefail
 
+UFO50_SOURCE="${1:-${UFO50_SOURCE:-./ufo50}}"
+ORIENTATION="${2:-${UFO50_ORIENTATION:-landscape}}"
+case "${ORIENTATION}" in
+    landscape)
+        DEFAULT_WRAPPER="./base/AndroidWrapper2024.1400.4.968_VM_debug_gamepad_hotplug.apk"
+        DEFAULT_OUTPUT="com.unofficial.ufo50.apk"
+        ;;
+    portrait)
+        DEFAULT_WRAPPER="./base/AndroidWrapper2024.1400.4.968_VM_debug_gamepad_hotplug_portrait.apk"
+        DEFAULT_OUTPUT="com.unofficial.ufo50.portrait.apk"
+        ;;
+    *)
+        echo "ERROR: Orientation must be 'landscape' or 'portrait', not '${ORIENTATION}'."
+        exit 1
+        ;;
+esac
+WRAPPER_APK="${UFO50_WRAPPER_APK:-${DEFAULT_WRAPPER}}"
+AAPT="./bin/aapt-osx"
+ZIPALIGN="./bin/zipalign-osx"
+APK_ALIGNMENT=4
+JAVA="./bin/java/Contents/Home/bin/java"
+OUTPUT_APK="${UFO50_OUTPUT_APK:-${DEFAULT_OUTPUT}}"
+OUTPUT_PENDING="${OUTPUT_APK}.pending"
+UTMT_SHA256="863c02a69e94a9af1f696883307f9afdf45fdb383c75f9e54791dadfeaacf364"
+
+rm -f "${OUTPUT_APK}" "${OUTPUT_PENDING}" "${OUTPUT_APK}.idsig" "${OUTPUT_PENDING}.idsig"
+cleanup_failed_output() {
+    status=$?
+    rm -f "${OUTPUT_APK}" "${OUTPUT_PENDING}" "${OUTPUT_APK}.idsig" "${OUTPUT_PENDING}.idsig"
+    exit "${status}"
+}
+trap cleanup_failed_output EXIT
+
 if ! command -v wget >/dev/null 2>&1; then
     echo "ERROR: Missing prerequisite: wget"
     exit 1
@@ -11,13 +44,10 @@ if ! command -v unzip >/dev/null 2>&1; then
     exit 1
 fi
 
-UFO50_SOURCE="${1:-${UFO50_SOURCE:-./ufo50}}"
-WRAPPER_APK="${UFO50_WRAPPER_APK:-./base/AndroidWrapper2024.1400.4.968_VM_debug_gamepad_hotplug.apk}"
-AAPT="./bin/aapt-osx"
-ZIPALIGN="./bin/zipalign-osx"
-APK_ALIGNMENT=16384
-JAVA="./bin/java/Contents/Home/bin/java"
-OUTPUT_APK="com.unofficial.ufo50.apk"
+if ! command -v shasum >/dev/null 2>&1; then
+    echo "ERROR: Missing prerequisite: shasum"
+    exit 1
+fi
 
 # Make sure that we actually have game files first
 if [ ! -f "${UFO50_SOURCE}/data.win" ]; then
@@ -117,6 +147,7 @@ if [ ! -x "${UTMT_CLI}" ]; then
     rm -rf ./bin/utmt ./utmt.zip
     mkdir -p ./bin/utmt
     wget https://github.com/UnderminersTeam/UndertaleModTool/releases/download/0.9.1.0/UTMT_CLI_v0.9.1.0-macOS.zip -O ./utmt.zip
+    printf '%s  %s\n' "${UTMT_SHA256}" ./utmt.zip | shasum -a 256 -c -
     unzip -q ./utmt.zip -d ./bin/utmt
     rm -f ./utmt.zip
     chmod +x "${UTMT_CLI}"
@@ -129,13 +160,16 @@ mv ./assets/game.droid.patched ./assets/game.droid
 # Download Java, if needed
 if [ ! -f "${JAVA}" ]; then
     ARCH="x64"
+    JAVA_SHA256="d444621a84ce91a314ac54525a2efa410b660e03c26b9895e83da2f76e0c5db5"
     if [[ $(uname -m) == 'arm64' ]]; then
         ARCH="aarch64"
+        JAVA_SHA256="49a051e6e6940b29dd093b4bd317a06d2145d8340ef953821022e517f89d2bea"
     fi
 
     rm -rf ./bin/java
     echo "Downloading java..."
     wget https://corretto.aws/downloads/resources/21.0.6.7.1/amazon-corretto-21.0.6.7.1-macosx-${ARCH}.tar.gz -O ./jdk.tar.gz
+    printf '%s  %s\n' "${JAVA_SHA256}" ./jdk.tar.gz | shasum -a 256 -c -
     echo "Extracting java..."
     tar -zxvf ./jdk.tar.gz
     mv ./amazon-corretto-21.jdk ./bin/java
@@ -191,18 +225,22 @@ with zipfile.ZipFile(apk, 'r') as zin, zipfile.ZipFile(tmp, 'w') as zout:
 os.replace(tmp, apk)
 PY
 
-# Zipalign and sign APK. Use 16 KiB alignment so uncompressed native
-# libraries install on Android devices built with 16 KiB page sizes.
+# Page-align native libraries and 4-byte-align other stored entries. The
+# wrapper extracts native libraries on devices with 16 KiB memory pages.
 echo "Building APK..."
-"${ZIPALIGN}" -f -v "${APK_ALIGNMENT}" UFO50Wrapper.apk com.unofficial.ufo50.zipalign.apk
-"${JAVA}" -jar ./bin/apksigner.jar sign --key ./base/testkey.pk8 --cert ./base/testkey.x509.pem --out "${OUTPUT_APK}" com.unofficial.ufo50.zipalign.apk
+"${ZIPALIGN}" -p -f -v "${APK_ALIGNMENT}" UFO50Wrapper.apk com.unofficial.ufo50.zipalign.apk
+"${JAVA}" -jar ./bin/apksigner.jar sign --key ./base/testkey.pk8 --cert ./base/testkey.x509.pem --out "${OUTPUT_PENDING}" com.unofficial.ufo50.zipalign.apk
+"${JAVA}" -jar ./bin/apksigner.jar verify --verbose "${OUTPUT_PENDING}"
+"${ZIPALIGN}" -c -p -v "${APK_ALIGNMENT}" "${OUTPUT_PENDING}"
+mv "${OUTPUT_PENDING}" "${OUTPUT_APK}"
 
 # Clean up
 echo "Cleaning up..."
 rm -f ./com.unofficial.ufo50.zipalign.apk
-rm -f ./com.unofficial.ufo50.apk.idsig
+rm -f "${OUTPUT_APK}.idsig" "${OUTPUT_PENDING}.idsig"
 rm -f ./UFO50Wrapper.apk
 rm -rf ./assets
+trap - EXIT
 
 echo "Done! Built ${OUTPUT_APK}. Have fun."
 if [ -t 0 ]; then read -n 1 -s -r -p "Press any key to continue..."; echo; fi

@@ -237,7 +237,7 @@ class WindowsBuildToolsTest(unittest.TestCase):
         self.assertIn("windowsbuildtools.java\" add-assets", script.lower())
         self.assertIn("d67abba221a54dbc29df3c0383bfaf0b8fc7128bf4f0e9898d42fc79610a098d", script.lower())
         self.assertIn("6dcb937d96f3ee90d2f9add333278b7041ea7980507a8a63f7aa4ca6c77a9c82", script.lower())
-        self.assertIn("com.unofficial.ufo50.apk.pending", script.lower())
+        self.assertIn('set "output_pending=%output_apk%.pending"', script.lower())
         self.assertRegex(script.lower(), r'apksigner\.jar"?\s+verify')
         self.assertIn('set "apk_alignment=4"', script.lower())
         self.assertIn("zipalign.exe -p -f -v %apk_alignment%", script.lower())
@@ -269,6 +269,41 @@ class WindowsBuildToolsTest(unittest.TestCase):
 
             self.assertNotEqual(result.returncode, 0)
             self.assertFalse(stale.exists(), result.stdout + result.stderr)
+
+    def test_all_builders_offer_a_distinct_portrait_variant(self) -> None:
+        portrait_wrapper = "AndroidWrapper2024.1400.4.968_VM_debug_gamepad_hotplug_portrait.apk"
+        scripts = [
+            (ROOT / "build_windows.bat").read_text(),
+            (ROOT / "build_linux").read_text(),
+            (ROOT / "build_macos.sh").read_text(),
+        ]
+
+        self.assertTrue((ROOT / "base" / portrait_wrapper).is_file())
+        for script in scripts:
+            self.assertIn(portrait_wrapper, script)
+            self.assertIn("com.unofficial.ufo50.portrait.apk", script)
+            self.assertIn("landscape", script)
+            self.assertIn("portrait", script)
+            self.assertIn("Orientation must be", script)
+
+        windows = scripts[0].lower()
+        self.assertRegex(
+            windows,
+            r'orientation%"=="portrait"[\s\S]*?hotplug_portrait\.apk"[\s\S]*?output_apk=com\.unofficial\.ufo50\.portrait\.apk',
+        )
+        self.assertRegex(
+            windows,
+            r'orientation%"=="landscape"[\s\S]*?hotplug\.apk"[\s\S]*?output_apk=com\.unofficial\.ufo50\.apk',
+        )
+        for script in scripts[1:]:
+            self.assertRegex(
+                script,
+                r'landscape\)[\s\S]*?hotplug\.apk"[\s\S]*?DEFAULT_OUTPUT="com\.unofficial\.ufo50\.apk"',
+            )
+            self.assertRegex(
+                script,
+                r'portrait\)[\s\S]*?hotplug_portrait\.apk"[\s\S]*?DEFAULT_OUTPUT="com\.unofficial\.ufo50\.portrait\.apk"',
+            )
 
 
 if __name__ == "__main__":

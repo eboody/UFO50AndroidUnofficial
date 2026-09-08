@@ -14,10 +14,25 @@ if not "%~1"=="" (
   set "UFO50_SOURCE=%~dp0ufo50"
 )
 
+set "ORIENTATION=%~2"
+if "%ORIENTATION%"=="" set "ORIENTATION=%UFO50_ORIENTATION%"
+if "%ORIENTATION%"=="" set "ORIENTATION=landscape"
+if /I "%ORIENTATION%"=="portrait" (
+  set "DEFAULT_WRAPPER=%~dp0base\AndroidWrapper2024.1400.4.968_VM_debug_gamepad_hotplug_portrait.apk"
+  set "OUTPUT_APK=com.unofficial.ufo50.portrait.apk"
+) else if /I "%ORIENTATION%"=="landscape" (
+  set "DEFAULT_WRAPPER=%~dp0base\AndroidWrapper2024.1400.4.968_VM_debug_gamepad_hotplug.apk"
+  set "OUTPUT_APK=com.unofficial.ufo50.apk"
+) else (
+  echo ERROR: Orientation must be "landscape" or "portrait", not "%ORIENTATION%".
+  exit /b 1
+)
+set "OUTPUT_PENDING=%OUTPUT_APK%.pending"
+
 if defined UFO50_WRAPPER_APK (
   for %%I in ("%UFO50_WRAPPER_APK%") do set "WRAPPER_APK=%%~fI"
 ) else (
-  set "WRAPPER_APK=%~dp0base\AndroidWrapper2024.1400.4.968_VM_debug_gamepad_hotplug.apk"
+  set "WRAPPER_APK=%DEFAULT_WRAPPER%"
 )
 
 pushd "%~dp0" || (
@@ -33,13 +48,13 @@ set "UTMT_CLI=%UTMT_CLI%"
 if "%UTMT_CLI%"=="" set "UTMT_CLI=%CD%\bin\utmt\UndertaleModCli.exe"
 
 REM Never leave an older or partially signed APK looking like this run's output.
-attrib -R ".\com.unofficial.ufo50.apk" 2>nul
-attrib -R ".\com.unofficial.ufo50.apk.pending" 2>nul
-del /f /q ".\com.unofficial.ufo50.apk" 2>nul
-del /f /q ".\com.unofficial.ufo50.apk.pending" 2>nul
-del /f /q ".\com.unofficial.ufo50.apk.idsig" 2>nul
-del /f /q ".\com.unofficial.ufo50.apk.pending.idsig" 2>nul
-if exist ".\com.unofficial.ufo50.apk" (
+attrib -R ".\%OUTPUT_APK%" 2>nul
+attrib -R ".\%OUTPUT_PENDING%" 2>nul
+del /f /q ".\%OUTPUT_APK%" 2>nul
+del /f /q ".\%OUTPUT_PENDING%" 2>nul
+del /f /q ".\%OUTPUT_APK%.idsig" 2>nul
+del /f /q ".\%OUTPUT_PENDING%.idsig" 2>nul
+if exist ".\%OUTPUT_APK%" (
   echo ERROR: Could not remove the previous output APK.
   goto FAIL
 )
@@ -186,32 +201,32 @@ REM Validate the exact signed APK before reporting success.
 echo Building APK...
 .\bin\zipalign.exe -p -f -v %APK_ALIGNMENT% ".\UFO50Wrapper.apk" ".\com.unofficial.ufo50.zipalign.apk"
 if errorlevel 1 goto FAIL
-"%JAVA%" -jar ".\bin\apksigner.jar" sign --key ".\base\testkey.pk8" --cert ".\base\testkey.x509.pem" --out ".\com.unofficial.ufo50.apk.pending" ".\com.unofficial.ufo50.zipalign.apk"
+"%JAVA%" -jar ".\bin\apksigner.jar" sign --key ".\base\testkey.pk8" --cert ".\base\testkey.x509.pem" --out ".\%OUTPUT_PENDING%" ".\com.unofficial.ufo50.zipalign.apk"
 if errorlevel 1 goto FAIL
-"%JAVA%" -jar ".\bin\apksigner.jar" verify --verbose ".\com.unofficial.ufo50.apk.pending"
+"%JAVA%" -jar ".\bin\apksigner.jar" verify --verbose ".\%OUTPUT_PENDING%"
 if errorlevel 1 goto FAIL
-.\bin\zipalign.exe -c -p -v %APK_ALIGNMENT% ".\com.unofficial.ufo50.apk.pending"
+.\bin\zipalign.exe -c -p -v %APK_ALIGNMENT% ".\%OUTPUT_PENDING%"
 if errorlevel 1 goto FAIL
-move /y ".\com.unofficial.ufo50.apk.pending" ".\com.unofficial.ufo50.apk" >nul
+move /y ".\%OUTPUT_PENDING%" ".\%OUTPUT_APK%" >nul
 if errorlevel 1 goto FAIL
 
 echo Cleaning up...
 del ".\com.unofficial.ufo50.zipalign.apk"
-del ".\com.unofficial.ufo50.apk.idsig" 2>nul
-del ".\com.unofficial.ufo50.apk.pending.idsig" 2>nul
+del ".\%OUTPUT_APK%.idsig" 2>nul
+del ".\%OUTPUT_PENDING%.idsig" 2>nul
 del ".\UFO50Wrapper.apk"
 rmdir /s /q ".\assets"
 set "BUILD_EXIT=0"
-echo Done! Built "%CD%\com.unofficial.ufo50.apk". Have fun.
+echo Done! Built "%CD%\%OUTPUT_APK%". Have fun.
 goto END
 
 :FAIL
 if not "%ERRORLEVEL%"=="0" set "BUILD_EXIT=%ERRORLEVEL%"
-attrib -R ".\com.unofficial.ufo50.apk" 2>nul
-attrib -R ".\com.unofficial.ufo50.apk.pending" 2>nul
-del /f /q ".\com.unofficial.ufo50.apk" 2>nul
-del /f /q ".\com.unofficial.ufo50.apk.pending" 2>nul
-del /f /q ".\com.unofficial.ufo50.apk.pending.idsig" 2>nul
+attrib -R ".\%OUTPUT_APK%" 2>nul
+attrib -R ".\%OUTPUT_PENDING%" 2>nul
+del /f /q ".\%OUTPUT_APK%" 2>nul
+del /f /q ".\%OUTPUT_PENDING%" 2>nul
+del /f /q ".\%OUTPUT_PENDING%.idsig" 2>nul
 echo.
 echo ERROR: Build failed. Temporary files were kept for troubleshooting.
 
